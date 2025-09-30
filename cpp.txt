@@ -1,0 +1,835 @@
+1. 
+함수를 정의할때 헤더파일에 forward declaration 을 하고 함수의 definition 따로 cpp파일로.
+그리고 함수를 사용하는거는 main.cpp에서… -> 이게 정석이기는 한데, 헤더 파일에 definition까지 들어가 있는경우가 많음. 그럴때 헤더가드가 꼭 있어야함. (#pragma once)
+
+2. 
+initialization할때는 {}을 사용하는것이 클래스 사용할때에도 좋음 -> type에 문제가 있으면 warning보다는 compile이 안되게 막아줌. 
+
+3. 
+			(type)		(at least)
+character 	char 		1 byte (8 bits)
+integer 	short		2 byte (16 bits)
+integer		int 		2 byte (16 bits) (mostly 4 byte)
+integer 	long 		4 byte (32 bits)
+integer		long long 	8 byte (64 bits)
+floating	float 		4 byte (32 bits)
+floating 	double		8 byte (64 bits)
+floating	long double	8 byte (64 bits) (mostly 8, 12, or 16 byte depending on OS or compiler)
+
+#include <limits>
+#include <iosream>
+
+numeric_limits<"TYPE">::max() 		-> the hightest number (absolute number) that "TYPE" can represent
+numeric_limits<"TYPE">::min() 		-> the lowest number (absolute number) that "TYPE" can represent
+numeric_limits<"TYPE">::lowest() 	-> the actual number that "TYPE" can represent (for floating type,  min() does not show negative value but lowest() does)
+
+for float initialization, should add 'f' at the end of literal; modern c/c++'s default is double
+
+
+#include <iomanip>
+#include <iostream>
+cout << std::setprecision(16)	-> show 16 digits after decimal points; it modify decimal precision after this line by converting number as binary internally.
+
+#include <cmath>
+#include <iostream>
+std::isnan("VALUE")	-> return true/false
+std::isinf("VALUE") -> return true/false
+
+** inf != NaN **
+
+4. 
+float = 32 bits
+1 for sign
+8 for exponent
+23 for mantissa
+
+if)
+sign = 0
+exponent = 7
+mantissa = 0.75
+=> +(1+0.75)*2^(7-127) = +1.316554 * 10^-36
+
+why 1 + 0.75?
+IEEE 754 normalized form. if exponent is not 0, then mantissa is always following 1.xxxx form.
+(since exponent is always based on '2' -> [1,2), so if 2.xxxx then exponent should be added 1 and keep 1)
+
+why 7 - 127?
+-127 is added for 'bias' (considering negative exponent)
+having negative exponent means moving 'k' binary decmial point toward left
+1.011(2) * 2^-2 = 0.01011(2)
+
+if exponent 'e' is 1~254 ( excluding 0 and 255, which is not acceptable in float type), then it is 'normal'.
+E = e - 127
+
+if exponent 'e' = 0 and mantissa is not equal to 0, then it is 'subnormal'
+
+if exponent 'e' = 255 and if mantissa is 0 than, it is +- infinit. if mantissa is not 0 then NaN.
+
+5.
+
+#include <iostream>
+
+1/0 -> true/false
+std::boolalpha
+
+true/false -> 1/0
+std::noboolalpha
+
+6.
+
+type casting => 
+
+#include <iostream>
+static_cast<"TYPE">("VALUE")
+
+7. 
+header: 선언을 담은 소스 조각. #include로 컴파일러가 타입 체크하고 템플릿 인스턴스 등을 만들 수 있게함.
+library: 이미 컴파일된 기계어 정의의 묶음. 링커가 심볼을 결합할 때 필요.
+
+static_cast<>()는 연산자임. 
+
+함수형 vs 명시적 캐스트:
+char("VALUE") => functional cast
+static_cast<"TYPE">("VALUE") => keyword cast
+
+결과가 동일하고 오버헤드가 없음. 다만 스타일/가독성과 클래스 타입에서 차이점이 존재.
+
+a) keyword cast는 의도적으로 형변환한다 라는것을 분명하게 보여줄수 있음. functional cast는 생성자 호출처럼 보일 수 있는 여지가 있음.
+b) functional cast는 생성자 호출 규칙(오버로드 해석)을 따르고, keyword cast는 정적 캐스트 규칙을 따름.
+
+keyword cast는 컴파일 단계에서 변환된 타입에 문제가 없는지 확인. functional cast는 좀 널널한편
+
+
+header에 여러 namespace가 있는데 대부분 std가 있음.
+
+8.
+\n vs endl
+\n은 단순 줄바꿈
+endl는 버퍼에 있는 모든 문자들을 모두 비워냄 (출력함).
+
+std::flush -> 줄바꿈을 하지 않고 버퍼에 있는 모든 문자들을 모두 비워냄
+
+9.
+리터럴 앞에 0은 8진수 0x는 16진수 
+0b는 2진수 (c++ 14부터)
+
+10. 
+함수의 파라미터값에 const 상수를 사용하수 있음. 이유는 함수 안에서 파라미터로 받은 값이 변경이 된다면, 사실상 함수 입출력이 
+명확해 지지 못하는 단점이 있기 때문. 따라서 개발자가 const상수를 파라미터로 고정해 다른 함수 안에서 값의 변경을 막을수가 있음
+
+
+11.
+컴파일 상수 vs 런타임 상수
+상수의 값이 컴파일에 결정이 되는지, 런타임에 결정이 되는지에 따라 달라짐.
+컴파일 상수는 constexpr으로 (c++ 11 이상) 명시적으로 표현해줄수 있음
+ 
+12.
+상수를 따로 모아서 헤더파일에 넣어서 사용하는게 좋음
+
+ex)
+#pragma once
+namespace constants{
+	constexpr double pi{3.141592};
+	constexpr double avogadro{6.0221413e23};
+	....
+}
+
+...
+
+#include "CONSTANTS.h" -> 메인에서 이렇게 사용
+
+
+13.
+a++ vs ++a의 차이점을 알아야함.
+
+int a = 4;
+cout << a++ << endl; // 출력은 4 (a를 먼저 출력후 1을 더함)
+
+int a = 4;
+cout << ++a << endl; // 출력은 5 (1을 먼저 더한다음 a를 출력)
+
+
+14.
+comma operator
+
+int a = (b,c) // 처음 b값이 a로, 그다음 c값이 다시 a로.
+
+int a = b,c // b값이 a로. c는 아무것도 안함.
+
+
+conditional operator (arithmetric if)
+
+bool onSale = true;
+const int price = (onSale == true) ? 10 : 100; // 상수값을 조건에 따라서 선언할수 있음
+
+/*
+if (onSale)
+	price = 10;
+else
+	price = 100;
+*/
+와 같음
+
+15. 
+
+short circuit evaluation
+
+int x = 2;
+int y = 2;
+if (x == 1 && y++ == 2)
+{
+	// do something
+}
+// 2 => && operator는 처음 x == 1의 값을 evaluate할때 False이면 우측의 계산을 하지 않음
+// 즉, x == 1 (False), skip operation y++ == 2
+cout << y << endl;
+
+16.
+
+logical AND 가 logical OR보다 우선순위가 높음
+
+bool r1 = v1 || v2 && v3;
+bool r3 = v1 || (v2 && v3);
+r1이 계산되는 순서는 r3와 동일
+
+17.
+음의 부호 이진수
+	a) 맨 앞자리는 +/-를 표현
+	b) 십진수 음의 정수를 이진수로 표현할때
+		i) 절대값을 이진수로 변경
+		ii) 보수 (complement)를 취해줌
+		iii) 이진수 1을 더해줌
+				-> 왜 1을 더해주는가? => +0/-0가 동시에 존재해서
+
+18.
+bitwise operator
+
+<< left shift
+>> right shift
+
+(cout/cin에서 사용되는 거와 모양은 같지만 다른 의미)
+
+~ bitwise not
+& bitwise and
+| bitwise or
+^ bitwise xor
+
+bitwise연산에는 unsigned를 사용하는게 일반적
+
+#include <iostream>
+#include <bitset> // 2진수의 표현으로 보여줌
+
+int main() {
+	using namespace std;
+
+	unsigned int a = 3;
+	cout << std::bitset<4>(a) << endl; // a변수의 값을 2진수로 4비트를 사용해서 0011 (10진수로는 3)
+
+	unsigned int b = a << 1; // left 방향으로 한칸 shift 0110 (10진수로는 6)
+	cout << std::bitset<4>(b) << endl; 
+
+
+	/*
+		left shift하면 2의 제곱수를 곱하는것. 한번 shift는 2^1, 두번은 2^2, 세번은 2^3 .... 
+		rifht shift하면 역으로 2의 제곱수를 나누는것. 
+	*/
+
+	cout << std::bitset<4>(~a) << endl; // 이진수 a의 값의 not (보수)를 취해주는것 1100
+
+	// 참고: 변수를 이진수로 표현하고 싶으면 0b를 사용하면됨.
+
+	unsigned int a = 0b1100;
+	unsigned int b = 0b0110;
+
+	cout << std::bitset<4>(a & b) << endl; // 0100
+	cout << std::bitset<4>(a | b) << endl; // 1110
+	cout << std::bitset<4>(a ^ b) << endl; // 1010
+
+	// 참고: bitwise operator도 줄여쓰는것이 가능함 a &= b; a |= b; a ^= b;
+
+	/*
+
+	0110 >> 2을 하게 되면 0001 칸을 넘어가면 skip이 되는 구조.
+	*/
+
+	return 0;
+
+}
+
+19.
+
+bit flags
+
+bool은 1byte, 즉 8비트의 공간을 가지고 있음. 근데 여기에 1/0의 값만 가지고 있음. 
+다른 bool형식의 변수들을 하나씩 선언하는거 보다, 하냐의 bool자료형에 남는 7비트의 공간을 잘 활용할수 있을것이라는것에서 부터 시작되었음.
+
+
+int main() {
+	const unsigned char opt0 = 1 << 0; // 0000 0001
+	const unsigned char opt1 = 1 << 1; // 0000 0010
+	const unsigned char opt2 = 1 << 2; // 0000 0100
+	const unsigned char opt3 = 1 << 3; // 0000 1000
+	// opt4,5,6,7
+
+	unsigned char items_flag = 0;
+	cout << "No Item " << bitset<8>(items_flag) << endl; // 0000 0000
+
+	// item0 on
+	items_flag |= opt0;
+	cout << "Item0 Obtained " << bitset<8>(items_flag) << endl; // 0000 0001
+
+	// item3 on
+	items_flag |= opt3;
+	cout << "Item3 Obtained " << bitset<8>(items_flag) << endl; // 0000 1001
+
+	// item3 lost
+	items_flag &= ~opt3;
+	cout << "Item3 Lost " << bitset<8>(items_flag) << endl; // 0000 0001
+
+	// has item1 ? 
+	if(items_flag & opt1) {cout << "has item1" << endl;}
+	else {cout << "not has item1" << endl;} // not have item1
+
+	// has item0 ?
+	if(items_flag & opt0) {cout << "has item0" << endl;} // has item0
+
+	// obtain item 2,3
+	items_flag |= (opt2 | opt3);
+	cout << bitset<8>(opt2 | opt3) << endl; // 0000 1100
+	cout << "Item2,3 obtained " << bitset<8>(items_flag) << endl; // item2,3 obtained 0000 1101
+
+
+	if ((items_flag & opt2) && !(items_flag & opt1))
+	{
+		// xor (^)는 반전시켜줌
+		items_flag ^= opt2; 
+		items_flag ^= opt1;
+
+	}
+
+	return 0;
+}
+
+20.
+
+bit masks
+
+int main() {
+
+	const unsigned int red_mask = 0xFF0000;
+	const unsigned int green_mask = 0x00FF00;
+	const unsigned int blue_mask = 0x0000FF;
+
+	unsigned int pixel_color = 0xDAA520; (0x00DAA520과 같음)
+
+	cout << std::bitset<32>(pixel_color) << endl;
+
+	unsigned char blue  = pixel_color & blue_mask;
+	// 이렇게 하면 pixel_color의 16진수 형태의 값에서 RGB의 B의 부분만 추출함.
+
+	unsigned char green  = (pixel_color & blue_mask) >> 8; // char은 8bit밖에 못보여주니까 값을 제대로 보여줄수 없음. 그래서 shift를 함.
+	
+	return 0;        
+}
+
+21.
+
+local variable
+
+int main() {
+	using namespace std;
+
+	int apple = 5;
+
+	cout << apple << endl;
+
+	{
+		int apple = 1;			// 이 스코프 안에서만 유효. int type의 새로운 메모리 공간을 사용, 즉 apple = 1. bracket이 끝나면 이 변수는 사라짐. (name hiding)
+		cout << apple << endl;
+	}
+	cout << apple << end;
+}
+
+
+int main() {
+	using namespace std;
+	int apple = 5;
+
+	cout << apple << endl;
+
+	{ 
+		apple = 1;				// bracket으로 scope를 정의해 줘도, 새로운 메모리 공간을 할당받는게 아닌, 위에 정의한 apple을 사용. 따라서 apple = 5
+		cout << apple << endl;
+	}
+
+	cout << apple << endl;
+}
+
+22.
+
+namespace
+
+이름과 return type이 같은 함수 2개를 정의한다고 하자.
+
+namespace function1
+{
+	int a = 1;
+	void doSomething(){
+		//do something
+	}
+}
+
+namespace function2
+{
+	int a = 1;
+	void doSomething(){
+		// do something
+	}
+}
+
+int main(){
+	function1::a;
+	function1::doSomething();
+
+	function2::a;
+	function2::doSomething();
+
+	return 0;
+}
+
+이렇게 namespace별로 나눠서 사용할수 있음.
+C17부터 nested namespace가 가능해짐.
+
+아래처럼 하나로 nested namespace도 가능함. 다만 권장하지는 않음.
+
+namespace work1::work11::work111
+{
+	int a = 1;
+	void doSomething()
+	{
+		a += 3;
+	}
+}
+
+23.
+ 
+전역변수 global variable
+
+int value = 123;
+
+int main()
+{
+	cout << value << endl; // 123
+
+	int value = 1;
+
+	cout << ::value << endl; // 123 '::'을 사용하면 global variable을 사용하는것
+	cout << value << endl; // 1
+
+	return 0;
+}
+
+정적변수 static variable
+
+void doSomething(){
+	static int a = 1;
+
+	++a;
+
+	cout << a << endl;
+}
+
+int main() 
+{
+	doSomething(); // 2
+	doSomething(); // 3
+	doSomething(); // 4
+	doSomething(); // 5
+
+}
+
+static을 통해 변수를 정의하면 메모리상으로 부터 static한 메모리 공간을 할당받는것. 
+즉, 여러번 함수를 호출하더라도, 처음 초기화된 a의 값이 게속 증가함. 왜? 고정된 메모리 공간을 할당받았기 떄문. 
+따라서, static을 통한 변수 정의는 꼭 초기화가 필요.
+
+전역변수를 사용해서 같은 효과를 낼수도 있음. 다만 가급적이면 전역변수를 사용하지 않는것을 추천.
+
+local variable은 링커가 링킹을 하지 않음 왜? 다른 파일과 연결될 일이 없음. 
+
+24.
+
+internal linkage => 개별 cpp파일 안에서만 전역으로 작동하는 전역변수
+
+static int g_a = 1; // 다른 cpp파일에서 접근이 불가
+
+int main()
+{
+	int a = 10;
+
+	return 0;
+}
+
+25.
+
+external linkage => 다른 cpp파일이 전역변수에 접근이 가능
+
+[test.cpp]
+
+#include <iostream>
+
+extern int a = 123;
+
+void doSomething(){
+
+	using namespace std;
+
+	cout << "Hello " << endl;
+}
+
+[main.cpp]
+
+#include <iostream>
+
+using namespace std;
+
+//forward declaration: 해당 파일에 "doSomething"이라는 함수가 존재한다고 알려줌. 알아서 doSomething함수의 body를 찾도록 함.
+extern void doSomething(); // extern 키워드 생략 가능
+extern int a;
+
+int main() {
+
+	doSomething(); // "Hello "
+	cout << a << endl; // 123
+	return 0;
+}
+
+extern을 사용해서 변수를 사용하면 초기화를 중복해서 하면 안됨. -> 링킹에러
+
+26.
+
+[MyConstant.h]
+
+#pragma once
+
+namespace Constants
+{
+	const double pi(3.141592);
+	const double gravity(9.8);
+	// ..
+
+}
+
+[test.cpp]
+
+#include <iostream>
+#include "MyConstant.h"
+
+extern int a = 123;
+
+void doSomething(){
+
+	using namespace std;
+
+	cout << "In test.cpp " << Constants::pi << endl;
+}
+
+[main.cpp]
+
+#include <iostream>
+#include "MyConstant.h"
+
+using namespace std;
+extern void doSomething();
+
+int main(){
+	
+	cout << "In main.cpp file " << Constants::pi << endl;
+
+	doSomething();
+	
+	return 0;
+}
+
+같은 pi값이 나옴.
+근데 두 pi는 실제로 같은 주소값을 가질까? -> 다름. 서로 다른 주소값을 가짐
+즉, MyConstants.h를 include해서 constant값을 불러오면 하나의 값을 복사해서 가지고옴.
+10번 같은값을 부른다면, 10개의 사본값을 불러오는것과 같은 의미가됨. 메모리가 낭비가 됨.
+이걸 어떻게 방지할수 있을까?
+
+일단 헤더에서 선언만 해줌
+
+[MyConstants.h]
+
+#pragma once
+
+namespace Constants
+{
+	extern const double pi;
+	extern const double gravity;
+}
+
+[MyConstants.cpp]
+
+namespace Constants
+{
+	extern const double pi(3.141592);
+	extern const double gravity(9.8);
+	// ..
+
+}
+
+[test.cpp]
+
+#include <iostream>
+#include "MyConstant.h"
+
+extern int a = 123;
+
+void doSomething(){
+
+	using namespace std;
+
+	cout << "In test.cpp " << Constants::pi << endl;
+}
+
+[main.cpp]
+
+#include <iostream>
+#include "MyConstant.h"
+
+using namespace std;
+extern void doSomething();
+
+int main(){
+	
+	cout << "In main.cpp file " << Constants::pi << endl;
+
+	doSomething();
+	
+	return 0;
+}
+
+외부 변수나 함수를 사용할때 extern을 붙이기도 하지만 외부에서 사용되는 변수등에도 extern을 붙여 이 변수가 외부에서 사용중임을 알려줄수 있음.
+
+이렇게 하면 같은 Pi값을 불러오면 같은 주소값을 가지는 값을 불러옴. 메모리를 절약할수 있음
+
+
+정리하면
+
+int g_x; // external linkage (전역변수)
+static int g_x; // ineternal linkage (정적변수, 초기화 안된)
+const int g_x; // 불가능함. 왜? 초기화가 안되어 있음.
+
+extern int g_z; // forward declaration
+extern const int g_z; // 다른 어딘가에서 한번 초기화가 되어야함.
+
+int g_y(1); // 초기화가 된 external linkage (젼역변수)
+static int g_y(1); // 다른 cpp 파일이 접근이 불가능한 internal linkage를 초기화까지 함. 
+const int g_y(1); // 같은 파일 안에서만 접근이 되는 상수
+
+extern int g_w(1); // 초기화도 되고, external linkage이며 다른 cpp파일에서 접근이 가능. 단, 다른 파일에서 또 초기화를 하면 안됨.
+extern const int g_w(1); // 초기화도 되고, external linkage이며 다른 cpp파일에서 접근이 가능함.
+
+27.
+
+namespace안에 특정한 함수를 사용한다고 한다면, 
+
+int main() {
+	
+	//using namespace std;
+
+	using std::cout;
+	using std::endl;
+
+	cout << 'Hello ' << endl;
+}
+
+
+근데 다른 namespace안에서 같은 이름의 함수를 사용한다면?
+
+int main() {
+	using namespace a;
+	using namespace b;
+	using namespace std;
+
+	cout << a::myvar << endl;
+	cout << b::myvar << endl;
+
+	혹은
+
+	{	using namesapce a;
+		cout << myvar << endl;
+	}
+
+	{	using namespace b;
+		cout << myvar << endl;
+	}
+}
+
+28.
+
+타입을 자동으로 추론할수 있는 auto keyword
+초기화를 하지 않으면 auto keyword를 사용할수 없음. 
+
+int main() {
+
+	using namespace std;
+
+	auto a = 123; // int
+
+	return 0;
+}
+
+함수의 return값으로 auto를 사용이 가능
+
+auto add(int x, int y){
+	return x+y;
+}
+
+int main() {
+	
+	auto result = add(1,2)
+
+	return 0;
+}
+
+근데 함수의 파라미터 값은 auto를 사용할수 없음.
+왜? 함수의 파라미터값으로 type추론을 위해 auto를 사용하는것은, 우리의 목적인 타입추론이 되는게 아니라,
+다양한 type의 파라미터를 받는 함수를 여러개를 만드는것으로 해석이 됨. 즉, 의도가 달라지게 되므로 파라미터에 auto 키워드를 사용할수 없음.
+대신 위 목적을 위해서 템플릿을 사용할수 있음
+
+29.
+
+implicit type conversion (coersion) vs explicit type conversion (casting)
+암시적 형변환 vs 명시적 형변환
+
+#include <typeinfo>
+
+int main(){
+	using namespace std;
+
+	cout << typeid(4.0).name() << endl; // typeid("VARIABLE").name() 변수의 데이터 타입을 보여줌
+
+	return 0;
+}
+
+암시적 형변환
+
+int a = 123.0;
+이면 컴파일러는 double에서 int로 강제 형변환을 함. 
+
+명시적 형 변환
+
+float a = 1.0f;
+double d = a;
+numeric promotion: 타입이 작은거에서 큰걸로 바뀔때; float < double.
+
+double d = 3;
+short s = 2;
+numeric conversion: 타입이 큰거에서 작은걸로 바뀔때; int < double || int < short
+
+타입이 큰거에서 작은걸로 바뀔때 생길수 있는 문제는
+
+int main() {
+	using namespae std;
+
+	int i = 30000;
+	char c = i;
+
+	cout << static_cast<int>(c) << endl; // 48
+
+	return 0;
+}
+
+char가 가질수 있는 가장 큰 수는 127. int i는 30000인데 여기서 char로 변하면 최소 127은 나올것이라고 예상. 
+근데 48이 나옴. 왜?
+정수 변환 규칙에 따르면 값을 담을수 없는 작은 타입으로 변환될때 사위 비트가 잘려나감 (truncate)
+즉, 30000을 2진수로 변환하면 0111 0101 0011 0000이 되는데 여기 하위 8비트만 남으면
+0011 0000이 남고 이는 10진수로 48이 되기 때문.
+
+cout << 5u - 10;
+// u는 unsigned integer를 표현
+
+형 변환에도 순서가 있음 
+int, unsigned int, long, unsigned long, long long, unsigned long long, float, double, long double
+unsigned int가 int보다 순위가 높음. 즉, unsigned int - int에서는 unsigned int를 int로 변환하지 않음.
+
+
+30.
+
+string
+
+#include <string>
+
+using namespace std;
+
+int main(){
+	
+	const char my_strs[] = "Hello, World"; // C++에서는 기본적으로 char만 제공. 배열로써 문자열을 생성
+
+	const string my_hello = "Hello, World"; // 사용자 정의 자료형으로 쓰임
+	string my_ID = "123"; // 이것도 가능
+
+	cout << my_hello << endl;
+
+	return 0;
+}
+
+string을 통해서 입력도 가능
+
+#include <string>
+using namespace std;
+
+int main(){
+
+	cout << "your name? ";
+	string name;
+	cin >> name;
+
+	cout << "your age? ";
+	string age;
+	cin >> age;
+
+	cout << name << " " << age << endl;
+
+	return 0;
+}
+
+중간에 공백이 있는 문자열은 문자 버퍼에 공백으로 나눠지게 되서 자동으로 두번 jack jack이 들어가게 됨.
+따라서 cin 대신에 getline을 사용해야함.
+
+std::getline(std::cin, name);
+
+std::getline(std::cin, age);
+
+이런식으로.
+
+
+타입이 다른 데이터를 받을때도 문제가 됨. 예를들어 string 과 int를 동시에 받을때
+그래서 age를 int로 받는다고 가정했을때
+
+cout << "your age";
+int age;
+cin >> age;
+std:cin.ignore(32767, '\n'); // \n이 입력버퍼에 들어오기 전까지 32767개의 char을 무시한다 라는 뜻
+32767대신에 LIMIT을 사용할수 있믐
+
+#include <limits>
+
+std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n')
+
+
+문자열 더하기도 가능
+
+string a("Hello, ");
+string b("World");
+cout << a + b << endl; // Hello, World 
+
+문자열 길이 확인 가능
+
+string a("Hello, World");
+cout << a.length() << endl; // 12
+
+
+
+
